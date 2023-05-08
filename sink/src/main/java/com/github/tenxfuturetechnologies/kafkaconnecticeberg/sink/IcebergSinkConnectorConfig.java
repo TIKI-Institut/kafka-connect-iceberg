@@ -100,6 +100,12 @@ public class IcebergSinkConnectorConfig extends AbstractConfig {
       "Table namespace. In Glue it will be used as database name";
   public static final String TABLE_NAMESPACE_DISPLAY = "Table Namespace";
 
+  public static final String TABLE_KAFKA_OFFSET_COLUMN_NAME_CONFIG = "table.kafka.offset.name";
+  public static final String TABLE_KAFKA_OFFSET_COLUMN_NAME_DEFAULT = "kafka_offset";
+  public static final String TABLE_KAFKA_OFFSET_COLUMN_NAME_DOC =
+      "Kafka offset column name. The name of the kafka offset column name in the iceberg table";
+  public static final String TABLE_KAFKA_OFFSET_COLUMN_NAME_DISPLAY = "Kafka offset column name";
+
   public static final String TABLE_NAME_CONFIG = "table.name";
   public static final String TABLE_NAME_DEFAULT = null;
   public static final String TABLE_NAME_DOC =
@@ -298,6 +304,17 @@ public class IcebergSinkConnectorConfig extends AbstractConfig {
           TABLE_NAMESPACE_DISPLAY);
 
       configDef.define(
+          TABLE_KAFKA_OFFSET_COLUMN_NAME_CONFIG,
+          Type.STRING,
+          TABLE_KAFKA_OFFSET_COLUMN_NAME_DEFAULT,
+          Importance.MEDIUM,
+          TABLE_KAFKA_OFFSET_COLUMN_NAME_DOC,
+          group,
+          ++orderInGroup,
+          Width.MEDIUM,
+          TABLE_KAFKA_OFFSET_COLUMN_NAME_DISPLAY);
+
+      configDef.define(
           TABLE_NAME_CONFIG,
           Type.STRING,
           TABLE_NAME_DEFAULT,
@@ -437,6 +454,10 @@ public class IcebergSinkConnectorConfig extends AbstractConfig {
     var pkList = getList(TABLE_PRIMARY_KEY_CONFIG);
     return pkList == null ? Set.of() : Set.copyOf(pkList);
   }
+
+  public String getKafkaOffsetColumnName() {
+      return getString(TABLE_KAFKA_OFFSET_COLUMN_NAME_CONFIG);
+    }
 
   public String getTableNamespace() {
     return getString(TABLE_NAMESPACE_CONFIG);
