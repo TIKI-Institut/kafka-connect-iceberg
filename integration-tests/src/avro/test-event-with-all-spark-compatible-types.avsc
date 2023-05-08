@@ -20,7 +20,8 @@
       "type": [
         "null",
         {
-          "type": "int"
+          "type": "int",
+          "connect.type": "int8"
         }
       ]
     },

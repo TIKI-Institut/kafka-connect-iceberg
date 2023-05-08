@@ -94,6 +94,62 @@ class RecordConverterTest {
   }
 
   @Test
+  void shouldConvertInt8() {
+    var valueSchema = SchemaBuilder.struct()
+        .name(RECORD_TYPE)
+        .field("intField", Schema.OPTIONAL_INT8_SCHEMA)
+        .build();
+    var value = new Struct(valueSchema).put("intField", Integer.valueOf(123).byteValue());
+    var sinkRecord = new SinkRecord(
+        TOPIC,
+        PARTITION,
+        KEY_SCHEMA,
+        KEY,
+        valueSchema,
+        value,
+        OFFSET);
+    var tableSchema = new org.apache.iceberg.Schema(
+        List.of(
+            NestedField.of(0, true, "intField", IntegerType.get())
+        )
+    );
+
+    var icebergRecord = underTest.convert(sinkRecord, tableSchema);
+
+    assertThat(icebergRecord.getField("intField"))
+        .isInstanceOf(Integer.class)
+        .isEqualTo(123);
+  }
+
+  @Test
+  void shouldConvertInt16() {
+    var valueSchema = SchemaBuilder.struct()
+        .name(RECORD_TYPE)
+        .field("intField", Schema.OPTIONAL_INT16_SCHEMA)
+        .build();
+    var value = new Struct(valueSchema).put("intField", (short) 1233);
+    var sinkRecord = new SinkRecord(
+        TOPIC,
+        PARTITION,
+        KEY_SCHEMA,
+        KEY,
+        valueSchema,
+        value,
+        OFFSET);
+    var tableSchema = new org.apache.iceberg.Schema(
+        List.of(
+            NestedField.of(0, true, "intField", IntegerType.get())
+        )
+    );
+
+    var icebergRecord = underTest.convert(sinkRecord, tableSchema);
+
+    assertThat(icebergRecord.getField("intField"))
+        .isInstanceOf(Integer.class)
+        .isEqualTo(1233);
+  }
+
+  @Test
   void shouldConvertInteger() {
     var valueSchema = SchemaBuilder.struct()
         .name(RECORD_TYPE)

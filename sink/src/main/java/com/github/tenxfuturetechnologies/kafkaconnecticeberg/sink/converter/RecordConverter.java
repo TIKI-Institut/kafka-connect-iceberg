@@ -184,6 +184,17 @@ public class RecordConverter {
 
   private Integer toInteger(org.apache.iceberg.types.Type type, String name, Object value) {
     try {
+
+      // int8
+      if (value instanceof java.lang.Byte) {
+        return ((Byte) value).intValue();
+      }
+
+      // int16
+      if (value instanceof java.lang.Short) {
+        return ((Short) value).intValue();
+      }
+
       return (Integer) value;
     } catch (Exception e) {
       throw new IllegalArgumentException(
