@@ -3,6 +3,8 @@ package com.github.tenxfuturetechnologies.kafkaconnecticeberg.sink.iceberg;
 import com.github.tenxfuturetechnologies.kafkaconnecticeberg.sink.spi.IcebergWriter;
 import java.io.IOException;
 import java.util.Arrays;
+
+import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.BaseTaskWriter;
@@ -53,20 +55,40 @@ public class DefaultIcebergWriter implements IcebergWriter {
       IcebergUtils.transactional(() -> {
         table.refresh();
         var transaction = table.newTransaction();
-        var rowDelta = transaction.newRowDelta();
-        Arrays.stream(result.dataFiles())
-            .filter(f -> f.recordCount() > 0)
-            .forEach(f -> {
-              log.debug("Adding file to table {} partition {}", table.name(), f.partition());
-              rowDelta.addRows(f);
-            });
-        Arrays.stream(result.deleteFiles())
-            .filter(f -> f.recordCount() > 0)
-            .forEach(f -> {
-              log.debug("Adding delete file to table {} partition {}", table.name(), f.partition());
-              rowDelta.addDeletes(f);
-            });
-        rowDelta.commit();
+
+        // always use overwrite commit when there are delete files
+        if (result.deleteFiles().length > 0) {
+          var rowDelta = transaction.newRowDelta();
+
+          Arrays.stream(result.dataFiles())
+              .filter(f -> f.recordCount() > 0)
+              .forEach(f -> {
+                log.debug("Adding file to table {} partition {}", table.name(), f.partition());
+                rowDelta.addRows(f);
+              });
+          Arrays.stream(result.deleteFiles())
+              .filter(f -> f.recordCount() > 0)
+              .forEach(f -> {
+                log.debug("Adding delete file to table {} partition {}", table.name(), f.partition());
+                rowDelta.addDeletes(f);
+              });
+
+          rowDelta.commit();
+
+        } else {
+          // there are no delete files so make an append only snapshot
+          var appendFiles = transaction.newAppend();
+
+          Arrays.stream(result.dataFiles())
+              .filter(f -> f.recordCount() > 0)
+              .forEach(f -> {
+                log.debug("Adding file to table {} partition {}", table.name(), f.partition());
+                appendFiles.appendFile(f);
+              });
+
+          appendFiles.commit();
+        }
+
         transaction.commitTransaction();
         complete = true;
         log.debug("Committed {} events to table {}", counter, table.location());
