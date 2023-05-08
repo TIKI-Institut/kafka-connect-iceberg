@@ -1,10 +1,7 @@
 package com.github.tenxfuturetechnologies.kafkaconnecticeberg.sink.iceberg;
 
 import com.github.tenxfuturetechnologies.kafkaconnecticeberg.sink.spi.IcebergWriter;
-import java.io.IOException;
 import java.util.Arrays;
-
-import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.BaseTaskWriter;
@@ -63,13 +60,15 @@ public class DefaultIcebergWriter implements IcebergWriter {
           Arrays.stream(result.dataFiles())
               .filter(f -> f.recordCount() > 0)
               .forEach(f -> {
-                log.debug("Adding file to table {} partition {}", table.name(), f.partition());
+                log.debug("Adding file to table {} partition {}",
+                        table.name(), f.partition());
                 rowDelta.addRows(f);
               });
           Arrays.stream(result.deleteFiles())
               .filter(f -> f.recordCount() > 0)
               .forEach(f -> {
-                log.debug("Adding delete file to table {} partition {}", table.name(), f.partition());
+                log.debug("Adding delete file to table {} partition {}",
+                        table.name(), f.partition());
                 rowDelta.addDeletes(f);
               });
 
