@@ -38,8 +38,8 @@ public class IcebergTableManager {
   }
 
   public Table from(final Schema schema) {
-    var schemaWithKafkaOffset = addKafkaOffsetColumn(schema);
-    var tableSchema = addPrimaryKeyIfNeeded(schemaWithKafkaOffset);
+//    var schemaWithKafkaOffset = addKafkaOffsetColumn(schema); -> should not be necessary
+    var tableSchema = addPrimaryKeyIfNeeded(schema);
     if (table == null) {
       var tableId = TableIdentifier.of(Namespace.of(config.getTableNamespace()),
           config.getTableName());

@@ -19,6 +19,8 @@ import java.util.UUID;
 import org.apache.iceberg.Schema;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.connect.data.SchemaBuilder;
+import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.errors.IllegalWorkerStateException;
@@ -135,7 +137,8 @@ public class RecordWriter implements Closeable {
   }
 
   private void writeRecord(SinkRecord sinkRecord) {
-    var projectedRecord = schemaCompatibilityTracker.project(sinkRecord);
+    var newRecord = extendSinkRecordWithKafkaOffset(sinkRecord);
+    var projectedRecord = schemaCompatibilityTracker.project(newRecord);
     var recordSchema = schemaConverter.convert(projectedRecord.valueSchema());
     var table = tableManager.from(recordSchema);
     if (icebergWriter == null || icebergWriter.isComplete()) {
@@ -156,6 +159,32 @@ public class RecordWriter implements Closeable {
     ++recordCount;
     buffer.poll();
     updateCurrentOffsets(sinkRecord);
+  }
+
+  /**
+   * This will add the kafka_offset to the value and the schema of incoming Kafka connect message record
+   */
+  private SinkRecord extendSinkRecordWithKafkaOffset(SinkRecord sinkRecord) {
+
+    var value = sinkRecord.value();
+
+    if (value instanceof Struct) {
+
+      var oldSchema = sinkRecord.valueSchema();
+      var newSchemaBuilder = SchemaBuilder.struct();
+
+      oldSchema.fields().forEach(field -> newSchemaBuilder.field(field.name(), field.schema()));
+
+      var newSchema = newSchemaBuilder.field(config.getKafkaOffsetColumnName(), org.apache.kafka.connect.data.Schema.INT64_SCHEMA).build();
+
+      ((Struct) value).put(config.getKafkaOffsetColumnName(), sinkRecord.kafkaOffset());
+
+      var newRecord = new SinkRecord(sinkRecord.topic(), sinkRecord.kafkaPartition(), sinkRecord.keySchema(), sinkRecord.key(), newSchema, value, sinkRecord.kafkaOffset());
+
+      return newRecord;
+    }
+
+    return sinkRecord;
   }
 
   private void updateCurrentOffsets(SinkRecord sinkRecord) {
