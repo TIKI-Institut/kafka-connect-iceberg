@@ -1,5 +1,6 @@
 package com.github.tenxfuturetechnologies.kafkaconnecticeberg.sink.iceberg;
 
+import static com.github.tenxfuturetechnologies.kafkaconnecticeberg.sink.IcebergSinkConnectorConfig.TABLE_KAFKA_OFFSET_COLUMN_NAME_DISPLAY;
 import static java.lang.String.format;
 import static org.apache.iceberg.TableProperties.FORMAT_VERSION;
 
@@ -15,6 +16,7 @@ import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.TableIdentifier;
 import org.apache.iceberg.exceptions.NoSuchTableException;
+import org.apache.iceberg.types.Types;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +38,8 @@ public class IcebergTableManager {
   }
 
   public Table from(final Schema schema) {
-    var tableSchema = addPrimaryKeyIfNeeded(schema);
+    var schemaWithKafkaOffset = addKafkaOffsetColumn(schema);
+    var tableSchema = addPrimaryKeyIfNeeded(schemaWithKafkaOffset);
     if (table == null) {
       var tableId = TableIdentifier.of(Namespace.of(config.getTableNamespace()),
           config.getTableName());
@@ -85,6 +88,17 @@ public class IcebergTableManager {
       tableSchema = new Schema(schema.columns(), primaryKeyColumIds);
     }
     return tableSchema;
+  }
+
+  /**
+   * This will add kafka_offset column as long type to the given Iceberg schema
+   */
+  private Schema addKafkaOffsetColumn(final Schema schema) {
+    var fields = schema.columns();
+    var kafkaOffsetField = Types.NestedField.required(fields.size() + 1, config.getKafkaOffsetColumnName(), new Types.LongType(), TABLE_KAFKA_OFFSET_COLUMN_NAME_DISPLAY);
+    fields.add(kafkaOffsetField);
+
+    return new Schema(schema.columns());
   }
 
   private Table createTable(TableIdentifier tableIdentifier, final Schema schema) {
