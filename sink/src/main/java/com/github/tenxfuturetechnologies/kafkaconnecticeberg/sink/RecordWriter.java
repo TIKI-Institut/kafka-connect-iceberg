@@ -177,9 +177,14 @@ public class RecordWriter implements Closeable {
 
       var newSchema = newSchemaBuilder.field(config.getKafkaOffsetColumnName(), org.apache.kafka.connect.data.Schema.INT64_SCHEMA).build();
 
-      ((Struct) value).put(config.getKafkaOffsetColumnName(), sinkRecord.kafkaOffset());
+      var newValue = new Struct(newSchema);
 
-      var newRecord = new SinkRecord(sinkRecord.topic(), sinkRecord.kafkaPartition(), sinkRecord.keySchema(), sinkRecord.key(), newSchema, value, sinkRecord.kafkaOffset());
+      // merge old data with new data
+      oldSchema.fields().forEach(field -> newValue.put(field.name(), ((Struct) value).get(field)));
+
+      newValue.put(config.getKafkaOffsetColumnName(), sinkRecord.kafkaOffset());
+
+      var newRecord = new SinkRecord(sinkRecord.topic(), sinkRecord.kafkaPartition(), sinkRecord.keySchema(), sinkRecord.key(), newSchema, newValue, sinkRecord.kafkaOffset());
 
       return newRecord;
     }

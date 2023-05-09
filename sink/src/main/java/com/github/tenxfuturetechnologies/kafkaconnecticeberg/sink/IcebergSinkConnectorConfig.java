@@ -487,6 +487,7 @@ public class IcebergSinkConnectorConfig extends AbstractConfig {
     return getString(CATALOG_NAME_CONFIG);
   }
 
+  // TODO: ZOLLAK-99 make sure no sensible information is written
   public Map<String, String> getIcebergConfiguration() {
     var config = new HashMap<String, String>();
     originals().entrySet()
