@@ -77,17 +77,17 @@ public class IcebergSinkTask extends SinkTask {
     }
   }
 
-  @Override
-  public Map<TopicPartition, OffsetAndMetadata> preCommit(
-      Map<TopicPartition, OffsetAndMetadata> currentOffsets) {
-    var committableOffsets = recordWriter.getCommittableOffsets()
-        .entrySet()
-        .stream()
-        .filter(entry -> currentOffsets.containsKey(entry.getKey()))
-        .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
-    log.info("Committing offsets {}", committableOffsets);
-    return committableOffsets;
-  }
+//  @Override
+//  public Map<TopicPartition, OffsetAndMetadata> preCommit(
+//      Map<TopicPartition, OffsetAndMetadata> currentOffsets) {
+//    var committableOffsets = recordWriter.getCommittableOffsets()
+//        .entrySet()
+//        .stream()
+//        .filter(entry -> currentOffsets.containsKey(entry.getKey()))
+//        .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+//    log.info("Committing offsets {}", committableOffsets);
+//    return committableOffsets;
+//  }
 
   @Override
   public void stop() {
